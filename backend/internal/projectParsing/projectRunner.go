@@ -1,10 +1,9 @@
 package projectparsing
 
 import (
+	"bufio"
 	"fmt"
-	"io"
 	"os/exec"
-	"strings"
 )
 
 func RunJobs(pipelines *Pipeline, projectDirectory string) {
@@ -13,30 +12,40 @@ func RunJobs(pipelines *Pipeline, projectDirectory string) {
 	for _, job := range jobs {
 		job.Status = "started"
 
-		jobSplit := strings.Split(job.Run, " ")
-		cmd := exec.Command(jobSplit[0], jobSplit[1:]...)
+		args := []string{
+			"run", "--rm",
+			"-v", fmt.Sprintf("%s:/app", projectDirectory),
+			"-w", "/app",
+			"golang:1.24",
+			"sh", "-c", job.Run,
+		}
+
+		cmd := exec.Command("docker", args...)
 		cmd.Dir = projectDirectory
 
-		stdoutPipe, _ := cmd.StdoutPipe()
-		stderrPipe, _ := cmd.StderrPipe()
+		stdout, _ := cmd.StdoutPipe()
+		stderr, _ := cmd.StderrPipe()
 		if err := cmd.Start(); err != nil {
 			fmt.Println("error while starting in cmd: ", err)
 			return
 		}
 
-		output, _ := io.ReadAll(stdoutPipe)
-		outputErr, _ := io.ReadAll(stderrPipe)
+		go func() {
+			scanner := bufio.NewScanner(stdout)
+			for scanner.Scan() {
+				fmt.Println(scanner.Text())
+			}
+		}()
 
-		if len(output) > 0 {
-			fmt.Println("output: ", string(output))
-		}
-
-		if len(outputErr) > 0 {
-			fmt.Println("output: ", string(outputErr))
-		}
+		go func() {
+			scanner := bufio.NewScanner(stderr)
+			for scanner.Scan() {
+				fmt.Println(scanner.Text())
+			}
+		}()
 
 		if err := cmd.Wait(); err != nil {
-			fmt.Println("err while waiting : ", err)
+			fmt.Println("err while waiting: ", err)
 			return
 		}
 
