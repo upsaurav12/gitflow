@@ -3,13 +3,24 @@ package projectparsing
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os/exec"
+
+	"github.com/gorilla/websocket"
 )
 
-func RunJobs(pipelines *Pipeline, projectDirectory string) {
+func RunJobs(pipelines *Pipeline, projectDirectory string, conn *websocket.Conn) {
 	jobs := pipelines.Job
 
-	for _, job := range jobs {
+	send := func(format string, args ...interface{}) {
+		msg := fmt.Sprintf(format, args...)
+		fmt.Println(msg)
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	}
+
+	for i, job := range jobs {
+		header := fmt.Sprintf("\n\n🚀 Starting Job %d/%d: **%s**\n----------------------------------------", i+1, len(jobs), job.Name)
+		send(header)
 		job.Status = "started"
 
 		args := []string{
@@ -25,30 +36,32 @@ func RunJobs(pipelines *Pipeline, projectDirectory string) {
 
 		stdout, _ := cmd.StdoutPipe()
 		stderr, _ := cmd.StderrPipe()
+
 		if err := cmd.Start(); err != nil {
-			fmt.Println("error while starting in cmd: ", err)
+			send("❌ Failed to start job %s: %v", job.Name, err)
 			return
 		}
 
-		go func() {
-			scanner := bufio.NewScanner(stdout)
+		// Live streaming logs
+		stream := func(prefix string, r io.Reader) {
+			scanner := bufio.NewScanner(r)
 			for scanner.Scan() {
-				fmt.Println(scanner.Text())
+				line := scanner.Text()
+				send("[%s] %s", prefix, line)
 			}
-		}()
+		}
 
-		go func() {
-			scanner := bufio.NewScanner(stderr)
-			for scanner.Scan() {
-				fmt.Println(scanner.Text())
-			}
-		}()
+		go stream("stdout", stdout)
+		go stream("stderr", stderr)
 
 		if err := cmd.Wait(); err != nil {
-			fmt.Println("err while waiting: ", err)
+			send("❌ Job %s failed: %v", job.Name, err)
 			return
 		}
 
-		fmt.Println(job.Name, "has been run successfully")
+		job.Status = "completed"
+		send("✅ Job %s completed successfully.\n----------------------------------------", job.Name)
 	}
+
+	send("\n🎉 All jobs completed successfully! 🚀\n")
 }

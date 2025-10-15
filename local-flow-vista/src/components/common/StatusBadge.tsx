@@ -11,45 +11,54 @@ interface StatusBadgeProps {
 
 const StatusBadge = ({ status, size = 'md', showLabel = true }: StatusBadgeProps) => {
   const config = {
-    idle: {
-      icon: Circle,
-      label: 'Idle',
-      className: 'bg-muted text-muted-foreground',
-      iconClassName: '',
-    },
-    running: {
-      icon: Loader2,
-      label: 'Running',
-      className: 'bg-primary/20 text-primary glow-primary',
-      iconClassName: 'animate-spin',
-    },
-    success: {
-      icon: CheckCircle2,
-      label: 'Success',
-      className: 'bg-success/20 text-success glow-success',
-      iconClassName: '',
-    },
-    failed: {
-      icon: XCircle,
-      label: 'Failed',
-      className: 'bg-destructive/20 text-destructive glow-destructive',
-      iconClassName: '',
-    },
-  };
+  idle: {
+    icon: Circle,
+    label: 'Idle',
+    className:
+      'bg-muted/60 text-muted-foreground border border-border/40 dark:bg-muted/40 dark:text-muted-foreground',
+    iconClassName: '',
+  },
+  running: {
+    icon: Loader2,
+    label: 'Running',
+    className:
+      'bg-blue-100 text-blue-700 border border-blue-200 ' +
+      'dark:bg-blue-900/70 dark:text-blue-300 dark:border-blue-800/70',
+    iconClassName: 'animate-spin-slow',
+  },
+  success: {
+    icon: CheckCircle2,
+    label: 'Success',
+    className:
+      'bg-emerald-100 text-emerald-700 border border-emerald-200 ' +
+      'dark:bg-emerald-900/70 dark:text-emerald-300 dark:border-emerald-800/70',
+    iconClassName: '',
+  },
+  failed: {
+    icon: XCircle,
+    label: 'Failed',
+    className:
+      'bg-red-100 text-red-700 border border-red-200 ' +
+      'dark:bg-red-900/70 dark:text-red-300 dark:border-red-800/70',
+    iconClassName: '',
+  },
+};
 
-  const { icon: Icon, label, className, iconClassName } = config[status];
+
+  const { icon: Icon, label, className, iconClassName } = config[status] || config.idle;
 
   const sizeClasses = {
-    sm: 'px-2 py-1 text-xs gap-1',
-    md: 'px-3 py-1.5 text-sm gap-1.5',
-    lg: 'px-4 py-2 text-base gap-2',
+    sm: 'px-2 py-0.5 text-xs gap-1',
+    md: 'px-2.5 py-1 text-sm gap-1.5',
+    lg: 'px-3 py-1.5 text-base gap-2',
   };
 
   const iconSizes = {
-    sm: 'w-3 h-3',
+    sm: 'w-3.5 h-3.5',
     md: 'w-4 h-4',
     lg: 'w-5 h-5',
   };
+
 
   return (
     <motion.div

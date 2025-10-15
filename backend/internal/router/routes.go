@@ -11,5 +11,7 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		v1.POST("/project", handler.CreateProject)
 		v1.GET("/projects", handler.GetProjects)
+		v1.GET("/project/:id", handler.GetProject)
+
 	}
 }

@@ -1,68 +1,94 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import AddProjectModal from '@/components/modals/AddProjectModal';
 import { Project } from '@/types/pipeline';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 
 const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      name: 'Frontend Dashboard',
-      path: '/home/dev/projects/dashboard',
-      pipelineFile: 'pipeline.yaml',
-      lastRun: {
-        status: 'success',
-        timestamp: new Date(),
-        duration: 45,
-      },
-    },
-    {
-      id: '2',
-      name: 'API Service',
-      path: '/home/dev/projects/api',
-      pipelineFile: 'pipeline.yaml',
-      lastRun: {
-        status: 'running',
-        timestamp: new Date(),
-      },
-    },
-    {
-      id: '3',
-      name: 'Data Pipeline',
-      path: '/home/dev/projects/data-pipeline',
-      pipelineFile: 'pipeline.yaml',
-      lastRun: {
-        status: 'failed',
-        timestamp: new Date(),
-        duration: 120,
-      },
-    },
-    {
-      id: '4',
-      name: 'Mobile App Backend',
-      path: '/home/dev/projects/mobile-backend',
-      pipelineFile: 'pipeline.yaml',
-      lastRun: {
-        status: 'idle',
-        timestamp: new Date(),
-      },
-    },
+    // {
+    //   id: '1',
+    //   name: 'Frontend Dashboard',
+    //   path: '/home/dev/projects/dashboard',
+    //   pipelineFile: 'pipeline.yaml',
+    //   lastRun: {
+    //     status: 'success',
+    //     timestamp: new Date(),
+    //     duration: 45,
+    //   },
+    // },
+    // {
+    //   id: '2',
+    //   name: 'API Service',
+    //   path: '/home/dev/projects/api',
+    //   pipelineFile: 'pipeline.yaml',
+    //   lastRun: {
+    //     status: 'running',
+    //     timestamp: new Date(),
+    //   },
+    // },
+    // {
+    //   id: '3',
+    //   name: 'Data Pipeline',
+    //   path: '/home/dev/projects/data-pipeline',
+    //   pipelineFile: 'pipeline.yaml',
+    //   lastRun: {
+    //     status: 'failed',
+    //     timestamp: new Date(),
+    //     duration: 120,
+    //   },
+    // },
+    // {
+    //   id: '4',
+    //   name: 'Mobile App Backend',
+    //   path: '/home/dev/projects/mobile-backend',
+    //   pipelineFile: 'pipeline.yaml',
+    //   lastRun: {
+    //     status: 'idle',
+    //     timestamp: new Date(),
+    //   },
+    // },
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
 
-  const handleAddProject = (newProject: { name: string; path: string; pipelineFile: string }) => {
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/api/v1/projects");
+      console.log("res data:" , res.data)
+      setProjects(res.data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+    }
+  };
+
+  fetchProjects();
+
+  }, [])
+
+  const handleAddProject = async  (newProject: { name: string; directory: string; filename: string }) => {
+
+    const randomNumber = Math.floor(Math.random() * 1000) + 1
     const project: Project = {
-      id: Date.now().toString(),
+      id: randomNumber.toString(),
       ...newProject,
       lastRun: {
         status: 'idle',
         timestamp: new Date(),
       },
     };
+
+    try {
+      const res = await axios.post("http://localhost:8000/api/v1/project", project)
+      console.log("actually from the output: ", res.data)
+    } catch (error) {
+      console.error("error:" , error)
+    }
     setProjects([...projects, project]);
   };
 
