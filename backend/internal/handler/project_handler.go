@@ -4,9 +4,9 @@ import (
 	projectparsing "backend/internal/projectParsing"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
 type Project struct {
@@ -14,10 +14,6 @@ type Project struct {
 	Name      string `json:"name"`
 	Directory string `json:"directory"`
 	FileName  string `json:"filename"`
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true }, // allow all origins (for dev)
 }
 
 var ProjectMap = map[string]Project{}
@@ -31,7 +27,7 @@ func CreateProject(c *gin.Context) {
 		return
 	}
 
-	index := project.ID
+	index := strconv.Itoa(count)
 
 	ProjectMap[index] = project
 
@@ -43,42 +39,11 @@ func CreateProject(c *gin.Context) {
 
 	fmt.Println("pipeline is here!!!", pipeline.Job)
 
+	projectparsing.RunJobs(pipeline, project.Directory)
+
 	count++
 
 	c.JSON(http.StatusOK, gin.H{"data": project})
-}
-
-func GetProject(c *gin.Context) {
-	id := c.Param("id")
-	project, ok := ProjectMap[id]
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
-		return
-	}
-
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		fmt.Println("WebSocket upgrade failed:", err)
-		return
-	}
-	defer conn.Close()
-
-	send := func(format string, args ...interface{}) {
-		msg := fmt.Sprintf(format, args...)
-		fmt.Println(msg)
-		conn.WriteMessage(websocket.TextMessage, []byte(msg))
-	}
-
-	send("📦 Initializing project: %s", project.FileName)
-
-	pipeline, err := projectparsing.ParseYamlToRun(project.FileName, project.Directory)
-	if err != nil {
-		send("❌ Error parsing YAML: %v", err)
-		return
-	}
-
-	send("🧩 Pipeline loaded successfully. Running jobs...\n")
-	projectparsing.RunJobs(pipeline, project.Directory, conn)
 }
 
 func GetProjects(c *gin.Context) {

@@ -6,30 +6,22 @@ import { Button } from '@/components/ui/button';
 import { FolderOpen, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-import axios from 'axios'
-
-type Project = {
-  id:string;
-  name: string;
-  directory:string;
-  filename: string;
-}
 
 interface AddProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (project: { name: string; directory: string; filename: string }) => void;
+  onAdd: (project: { name: string; path: string; pipelineFile: string }) => void;
 }
 
 const AddProjectModal = ({ open, onOpenChange, onAdd }: AddProjectModalProps) => {
   const [name, setName] = useState('');
-  const [directory, setPath] = useState('');
-  const [filename, setPipelineFile] = useState('pipeline.yaml');
+  const [path, setPath] = useState('');
+  const [pipelineFile, setPipelineFile] = useState('pipeline.yaml');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !directory) {
+    if (!name || !path) {
       toast({
         title: 'Validation Error',
         description: 'Please fill in all required fields',
@@ -38,23 +30,7 @@ const AddProjectModal = ({ open, onOpenChange, onAdd }: AddProjectModalProps) =>
       return;
     }
 
-    const randomNumber = Math.floor(Math.random() * 1000) + 1
-
-    const project: Project = {
-      id: randomNumber.toString(),
-      name: name,
-      directory: directory,
-      filename: filename,
-    }
-
-    // try {
-    //   const res = await axios.post("http://localhost:8000/api/v1/project",project )
-    //   console.log("response from actual: ", res.data)
-    // } catch (error) {
-    //   console.error("error:", error)
-    // }
-
-    onAdd({ name, directory, filename });
+    onAdd({ name, path, pipelineFile });
     setName('');
     setPath('');
     setPipelineFile('pipeline.yaml');
@@ -107,7 +83,7 @@ const AddProjectModal = ({ open, onOpenChange, onAdd }: AddProjectModalProps) =>
             <div className="relative mt-1.5">
               <Input
                 id="path"
-                value={directory}
+                value={path}
                 onChange={(e) => setPath(e.target.value)}
                 placeholder="/home/user/projects/my-project"
                 className="glass-effect pr-10"
@@ -131,7 +107,7 @@ const AddProjectModal = ({ open, onOpenChange, onAdd }: AddProjectModalProps) =>
             </Label>
             <Input
               id="pipeline"
-              value={filename}
+              value={pipelineFile}
               onChange={(e) => setPipelineFile(e.target.value)}
               placeholder="pipeline.yaml"
               className="mt-1.5 glass-effect"

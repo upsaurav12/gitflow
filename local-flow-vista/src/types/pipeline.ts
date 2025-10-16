@@ -3,8 +3,8 @@ export type PipelineStatus = 'idle' | 'running' | 'success' | 'failed';
 export interface Project {
   id: string;
   name: string;
-  directory: string;
-  filename: string;
+  path: string;
+  pipelineFile: string;
   lastRun?: {
     status: PipelineStatus;
     timestamp: Date;

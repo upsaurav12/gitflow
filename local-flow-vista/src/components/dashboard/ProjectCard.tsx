@@ -33,7 +33,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
           <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-smooth">
             {project.name}
           </h3>
-          <p className="text-sm text-muted-foreground truncate">{project.directory}</p>
+          <p className="text-sm text-muted-foreground truncate">{project.path}</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -55,7 +55,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
 
       <div className="flex items-center gap-2 mb-4">
         <FileText className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{project.filename}</span>
+        <span className="text-sm text-muted-foreground">{project.pipelineFile}</span>
       </div>
 
       {project.lastRun && (
