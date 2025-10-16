@@ -1,45 +1,67 @@
 package projectparsing
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
+
+	"github.com/gorilla/websocket"
 )
 
-func RunJobs(pipelines *Pipeline, projectDirectory string) {
+func RunJobs(pipelines *Pipeline, projectDirectory string, conn *websocket.Conn) {
 	jobs := pipelines.Job
 
-	for _, job := range jobs {
+	send := func(format string, args ...interface{}) {
+		msg := fmt.Sprintf(format, args...)
+		fmt.Println(msg)
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	}
+
+	for i, job := range jobs {
+		header := fmt.Sprintf("\n\n🚀 Starting Job %d/%d: **%s**\n----------------------------------------", i+1, len(jobs), job.Name)
+		send(header)
 		job.Status = "started"
 
-		jobSplit := strings.Split(job.Run, " ")
-		cmd := exec.Command(jobSplit[0], jobSplit[1:]...)
+		args := []string{
+			"run", "--rm",
+			"-v", fmt.Sprintf("%s:/app", projectDirectory),
+			"-w", "/app",
+			"golang:1.24",
+			"sh", "-c", job.Run,
+		}
+
+		cmd := exec.Command("docker", args...)
 		cmd.Dir = projectDirectory
 
-		stdoutPipe, _ := cmd.StdoutPipe()
-		stderrPipe, _ := cmd.StderrPipe()
+		stdout, _ := cmd.StdoutPipe()
+		stderr, _ := cmd.StderrPipe()
+
 		if err := cmd.Start(); err != nil {
-			fmt.Println("error while starting in cmd: ", err)
+			send("❌ Failed to start job %s: %v", job.Name, err)
 			return
 		}
 
-		output, _ := io.ReadAll(stdoutPipe)
-		outputErr, _ := io.ReadAll(stderrPipe)
-
-		if len(output) > 0 {
-			fmt.Println("output: ", string(output))
+		// Live streaming logs
+		stream := func(prefix string, r io.Reader) {
+			scanner := bufio.NewScanner(r)
+			for scanner.Scan() {
+				line := scanner.Text()
+				send("[%s] %s", prefix, line)
+			}
 		}
 
-		if len(outputErr) > 0 {
-			fmt.Println("output: ", string(outputErr))
-		}
+		go stream("stdout", stdout)
+		go stream("stderr", stderr)
 
 		if err := cmd.Wait(); err != nil {
-			fmt.Println("err while waiting : ", err)
+			send("❌ Job %s failed: %v", job.Name, err)
 			return
 		}
 
-		fmt.Println(job.Name, "has been run successfully")
+		job.Status = "completed"
+		send("✅ Job %s completed successfully.\n----------------------------------------", job.Name)
 	}
+
+	send("\n🎉 All jobs completed successfully! 🚀\n")
 }
