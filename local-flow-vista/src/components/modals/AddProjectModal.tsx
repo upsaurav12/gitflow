@@ -47,12 +47,12 @@ const AddProjectModal = ({ open, onOpenChange, onAdd }: AddProjectModalProps) =>
       filename: filename,
     }
 
-    try {
-      const res = await axios.post("http://localhost:8000/api/v1/project",project )
-      console.log("response from actual: ", res.data)
-    } catch (error) {
-      console.error("error:", error)
-    }
+    // try {
+    //   const res = await axios.post("http://localhost:8000/api/v1/project",project )
+    //   console.log("response from actual: ", res.data)
+    // } catch (error) {
+    //   console.error("error:", error)
+    // }
 
     onAdd({ name, directory, filename });
     setName('');
